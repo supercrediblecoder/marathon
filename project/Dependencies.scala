@@ -26,6 +26,7 @@ object Dependencies {
     asyncAwait % "compile",
     aws % "compile",
     chaos % "compile",
+    fastParse % "compile",
     mesos % "compile",
     jerseyServlet % "compile",
     jerseyMultiPart % "compile",
@@ -76,6 +77,7 @@ object Dependency {
     val Aws = "1.11.129"
     val Alpakka  = "0.8"
     val Chaos = "0.10.0"
+    val FastParse = "1.0.0"
     val Guava = "19.0"
     val Mesos = "1.5.0-health-check-ipv6"
     // Version of Mesos to use in Dockerfile.
@@ -125,6 +127,7 @@ object Dependency {
   val akkaHttp = "com.typesafe.akka" %% "akka-http" % V.AkkaHttp
   val akkaHttpPlayJson = "de.heikoseeberger" %% "akka-http-play-json" % "1.17.0"
   val asyncAwait = "org.scala-lang.modules" %% "scala-async" % V.AsyncAwait
+  val fastParse = "com.lihaoyi" %% "fastparse" % V.FastParse
   val playJson = "com.typesafe.play" %% "play-json" % V.PlayJson
   val chaos = "mesosphere" %% "chaos" % V.Chaos exclude("org.glassfish.web", "javax.el")
   val guava = "com.google.guava" % "guava" % V.Guava
