@@ -40,6 +40,7 @@ class RootGroup(
     var result = List.empty[(AppDefinition, AppDefinition)]
 
     //group->group dependencies
+    println(transitiveGroupsById)
     for {
       group <- transitiveGroupsById.values
       dependencyId <- group.dependencies
@@ -47,6 +48,7 @@ class RootGroup(
       app <- group.transitiveApps.to[Set]
       dependentApp <- dependency.transitiveApps.to[Set]
     } result ::= app -> dependentApp
+    println(s"### $result")
 
     //app->group/app dependencies
     for {
@@ -57,6 +59,7 @@ class RootGroup(
       dependentGroup = transitiveGroupsById.get(dependencyId).map(_.transitiveApps.to[Set])
       dependent <- dependentApp orElse dependentGroup getOrElse Set.empty
     } result ::= app -> dependent
+    println(s"### $result")
     result
   }
 

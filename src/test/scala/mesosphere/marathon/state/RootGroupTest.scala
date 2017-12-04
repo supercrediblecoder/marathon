@@ -49,6 +49,31 @@ class RootGroupTest extends UnitTest with GroupCreation {
       current.app(path) should be('empty)
     }
 
+    "can iterate over all transitive apps" in {
+      Given("an existing group with two subgroups")
+      val app1 = AppDefinition("/test/app1".toPath)
+      val app2 = AppDefinition("/test/group1/app2".toPath)
+      val app3 = AppDefinition("/test/group2/app3".toPath)
+      val current = createRootGroup(
+        groups = Set(
+          createGroup(
+            "/test".toPath,
+            apps = Map(app1.id -> app1),
+            groups = Set(
+            createGroup("/test/group1".toPath, Map(app2.id -> app2)),
+            createGroup("/test/group2".toPath, Map(app3.id -> app3))
+          ))))
+
+      When("the transitive apps are collect")
+      val appDefs = current.transitiveApps.toIterable.map(_.id.toString)
+      val appIds = current.transitiveAppIds.toIterable.map(_.toString)
+
+      Then("we have apps from all levers")
+      val expected = Iterable("/test/app1", "/test/group1/app2", "/test/group2/app3")
+      appDefs should contain theSameElementsAs(expected)
+      appIds should contain theSameElementsAs(expected)
+    }
+
     "can find a group by its path" in {
       Given("an existing group with two subgroups")
       val app1 = AppDefinition("/test/group1/app1".toPath)
