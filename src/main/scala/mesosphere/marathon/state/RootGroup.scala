@@ -44,8 +44,8 @@ class RootGroup(
       group <- transitiveGroupsById.values
       dependencyId <- group.dependencies
       dependency <- transitiveGroupsById.get(dependencyId)
-      app <- group.transitiveApps
-      dependentApp <- dependency.transitiveApps
+      app <- group.transitiveApps.to[Set]
+      dependentApp <- dependency.transitiveApps.to[Set]
     } result ::= app -> dependentApp
 
     //app->group/app dependencies
