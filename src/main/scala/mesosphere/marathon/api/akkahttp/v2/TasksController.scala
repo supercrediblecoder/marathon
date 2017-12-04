@@ -26,7 +26,6 @@ import mesosphere.marathon.core.task.tracker.InstanceTracker
 import mesosphere.marathon.plugin.auth.{ Authenticator, _ }
 import mesosphere.marathon.raml.{ AnyToRaml, DeploymentResult, EnrichedTasksList, Reads, Writes }
 import mesosphere.marathon.state.PathId
-import mesosphere.marathon.stream.Implicits._
 
 import scala.async.Async._
 import scala.concurrent.{ ExecutionContext, Future }
@@ -75,7 +74,7 @@ class TasksController(
   private def listTasksTxt()(implicit identity: Identity): Route = {
     onSuccess(async {
       val instancesBySpec = await(instanceTracker.instancesBySpec)
-      val apps = groupManager.rootGroup().transitiveApps.filterAs(app => authorizer.isAuthorized(identity, ViewRunSpec, app))(collection.breakOut)
+      val apps = groupManager.rootGroup().transitiveApps.filter(app => authorizer.isAuthorized(identity, ViewRunSpec, app)).to[Seq]
       ListTasks(instancesBySpec, apps)
     }) { data =>
       complete(data)

@@ -20,11 +20,21 @@ class Group(
     val dependencies: Set[PathId] = defaultDependencies,
     val version: Timestamp = defaultVersion) extends IGroup {
 
-  lazy val transitiveAppsById: Map[AppDefinition.AppKey, AppDefinition] = apps ++ groupsById.values.flatMap(_.transitiveAppsById)
-  lazy val transitivePodsById: Map[PathId, PodDefinition] = pods ++ groupsById.values.flatMap(_.transitivePodsById)
+  def app(appId: PathId): Option[AppDefinition] = {
+    group(appId.parent).flatMap(_.apps.get(appId))
+  }
+  def pod(podId: PathId): Option[PodDefinition] = {
+    group(podId.parent).flatMap(_.pods.get(podId))
+  }
 
-  def app(appId: PathId): Option[AppDefinition] = transitiveAppsById.get(appId)
-  def pod(podId: PathId): Option[PodDefinition] = transitivePodsById.get(podId)
+  def runSpec(id: PathId): Option[RunSpec] = {
+    group(id.parent).flatMap { parentGroup =>
+      val maybeApp = parentGroup.apps.get(id)
+      if (maybeApp.isDefined) maybeApp else parentGroup.pods.get(id)
+    }
+  }
+
+  def exists(id: PathId) = runSpec(id).isDefined
 
   /**
     * Find and return the child group for the given path. If no match is found, then returns None
@@ -38,13 +48,14 @@ class Group(
     }
   }
 
-  lazy val transitiveApps: Set[AppDefinition] = transitiveAppsById.values.toSet
-  lazy val transitiveAppIds: Set[PathId] = transitiveAppsById.keySet
+  lazy val transitiveApps: Iterator[AppDefinition] = apps.valuesIterator ++ groupsById.valuesIterator.flatMap(_.transitiveApps)
+  lazy val transitiveAppIds: Iterator[PathId] = apps.keysIterator ++ groupsById.valuesIterator.flatMap(_.transitiveAppIds)
 
-  def transitivePods: Set[PodDefinition] = transitivePodsById.values.toSet
+  lazy val transitivePods: Iterator[PodDefinition] = pods.valuesIterator ++ groupsById.valuesIterator.flatMap(_.transitivePods)
+  lazy val transitivePodIds: Iterator[PathId] = pods.keysIterator ++ groupsById.valuesIterator.flatMap(_.transitivePodIds)
 
-  lazy val transitiveRunSpecsById: Map[PathId, RunSpec] = transitiveAppsById ++ transitivePodsById
-  lazy val transitiveRunSpecs: Set[RunSpec] = transitiveRunSpecsById.values.toSet
+  lazy val transitiveRunSpecs: Iterator[RunSpec] = transitiveApps ++ transitivePods
+  lazy val transitiveRunSpecIds: Iterator[PathId] = transitiveAppIds ++ transitivePodIds
 
   lazy val transitiveGroupsById: Map[Group.GroupKey, Group] = {
     Map(id -> this) ++ groupsById.values.flatMap(_.transitiveGroupsById)
@@ -70,7 +81,7 @@ class Group(
 
   override def hashCode(): Int = Objects.hash(id, apps, pods, groupsById, dependencies, version)
 
-  override def toString = s"Group($id, ${apps.values}, ${pods.values}, ${groupsById.values}, $dependencies, $version, ${transitiveAppsById}, ${transitivePodsById})"
+  override def toString = s"Group($id, ${apps.values}, ${pods.values}, ${groupsById.values}, $dependencies, $version)"
 }
 
 object Group {
@@ -107,8 +118,8 @@ object Group {
 
   private def noAppsAndPodsWithSameId: Validator[Group] =
     isTrue("Applications and Pods may not share the same id") { group =>
-      val podIds = group.transitivePodsById.keySet
-      val appIds = group.transitiveAppsById.keySet
+      val podIds = group.transitivePodIds.to[Set]
+      val appIds = group.transitiveAppIds.to[Set]
       appIds.intersect(podIds).isEmpty
     }
 

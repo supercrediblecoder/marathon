@@ -115,7 +115,7 @@ private[migration] object MigrationTo15 {
 
     val appIds: Seq[(PathId, OffsetDateTime)] = root.transitiveApps.map { app =>
       app.id -> app.version.toOffsetDateTime
-    }(collection.breakOut)
+    }.toIndexedSeq
 
     serviceRepository.getVersions(appIds).via(migrateServiceFlow).runWith(Sink.seq)
       .flatMap(MigratedRoot(root, _).store(groupRepository))

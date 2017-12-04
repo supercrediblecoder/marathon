@@ -12,6 +12,43 @@ import mesosphere.marathon.test.GroupCreation
 
 class RootGroupTest extends UnitTest with GroupCreation {
   "A Group" should {
+
+    "can find an app by its path" in {
+      Given("an existing group with two subgroups")
+      val app1 = AppDefinition("/test/group1/app1".toPath)
+      val app2 = AppDefinition("/test/group2/app2".toPath)
+      val current = createRootGroup(
+        groups = Set(
+          createGroup("/test".toPath, groups = Set(
+            createGroup("/test/group1".toPath, Map(app1.id -> app1)),
+            createGroup("/test/group2".toPath, Map(app2.id -> app2))
+          ))))
+
+      When("an app with a specific path is requested")
+      val path = PathId("/test/group1/app1")
+
+      Then("the group is found")
+      current.app(path) should be('defined)
+    }
+
+    "cannot find an app if it's not existing" in {
+      Given("an existing group with two subgroups")
+      val app1 = AppDefinition("/test/group1/app1".toPath)
+      val app2 = AppDefinition("/test/group2/app2".toPath)
+      val current = createRootGroup(
+        groups = Set(
+          createGroup("/test".toPath, groups = Set(
+            createGroup("/test/group1".toPath, Map(app1.id -> app1)),
+            createGroup("/test/group2".toPath, Map(app2.id -> app2))
+          ))))
+
+      When("a group with a specific path is requested")
+      val path = PathId("/test/group1/unknown")
+
+      Then("the app is not found")
+      current.app(path) should be('empty)
+    }
+
     "can find a group by its path" in {
       Given("an existing group with two subgroups")
       val app1 = AppDefinition("/test/group1/app1".toPath)
@@ -30,7 +67,7 @@ class RootGroupTest extends UnitTest with GroupCreation {
       current.group(path) should be('defined)
     }
 
-    "can not find a group if its not existing" in {
+    "cannot find a group if its not existing" in {
       Given("an existing group with two subgroups")
       val app1 = AppDefinition("/test/group1/app1".toPath)
       val app2 = AppDefinition("/test/group2/app2".toPath)

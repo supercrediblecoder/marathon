@@ -93,16 +93,17 @@ private[impl] object DVDIProviderValidations extends ExternalVolumeValidations {
   // task instance across the entire cluster.
   override lazy val rootGroup = new Validator[RootGroup] {
     override def apply(rootGroup: RootGroup): Result = {
-      val appsByVolume: Map[String, Set[PathId]] =
+      val appsByVolume: Map[String, Iterable[PathId]] =
         rootGroup.transitiveApps
+          .toIterable
           .flatMap { app => namesOfMatchingVolumes(app).map(_ -> app.id) }
           .groupBy { case (volumeName, _) => volumeName }
           .map { case (volumeName, volumes) => volumeName -> volumes.map { case (_, appId) => appId } }
 
       val appValid: Validator[AppDefinition] = {
         def volumeNameUnique(appId: PathId): Validator[ExternalVolume] = {
-          def conflictingApps(vol: ExternalVolume): Set[PathId] =
-            appsByVolume.getOrElse(vol.external.name, Set.empty).filter(_ != appId)
+          def conflictingApps(vol: ExternalVolume): Iterable[PathId] =
+            appsByVolume.getOrElse(vol.external.name, Iterable.empty).filter(_ != appId)
 
           isTrue { (vol: ExternalVolume) =>
             val conflictingAppIds = conflictingApps(vol).mkString(", ")

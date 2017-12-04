@@ -53,20 +53,20 @@ class AppTasksResource @Inject() (
           val groupPath = gid.toRootPath
           val maybeGroup = groupManager.group(groupPath)
           withAuthorization(ViewGroup, maybeGroup, unknownGroup(groupPath)) { group =>
-            ok(jsonObjString("tasks" -> runningTasks(group.transitiveAppIds, instancesBySpec).toRaml))
+            ok(jsonObjString("tasks" -> runningTasks(group.transitiveAppIds.to[Seq], instancesBySpec).toRaml))
           }
         case _ =>
           val appId = id.toRootPath
           val maybeApp = groupManager.app(appId)
           withAuthorization(ViewRunSpec, maybeApp, unknownApp(appId)) { _ =>
-            ok(jsonObjString("tasks" -> runningTasks(Set(appId), instancesBySpec).toRaml))
+            ok(jsonObjString("tasks" -> runningTasks(Seq(appId), instancesBySpec).toRaml))
           }
       }
     }
     result(tasksResponse)
   }
 
-  def runningTasks(appIds: Set[PathId], instancesBySpec: InstancesBySpec): Set[EnrichedTask] = {
+  def runningTasks(appIds: Seq[PathId], instancesBySpec: InstancesBySpec): Seq[EnrichedTask] = {
     appIds.withFilter(instancesBySpec.hasSpecInstances).flatMap { id =>
       val health = result(healthCheckManager.statuses(id))
       instancesBySpec.specInstances(id).flatMap { instance =>

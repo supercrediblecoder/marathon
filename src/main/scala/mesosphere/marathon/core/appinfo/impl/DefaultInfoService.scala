@@ -46,7 +46,7 @@ private[appinfo] class DefaultInfoService(
     async { // linter:ignore UnnecessaryElseBranch
       log.debug("queryAll")
       val rootGroup = groupManager.rootGroup()
-      val selectedApps: IndexedSeq[AppDefinition] = rootGroup.transitiveApps.filterAs(selector.matches)(collection.breakOut)
+      val selectedApps: IndexedSeq[AppDefinition] = rootGroup.transitiveApps.filter(selector.matches).toIndexedSeq
       val infos = await(resolveAppInfos(selectedApps, embed))
       infos
     }
@@ -59,7 +59,7 @@ private[appinfo] class DefaultInfoService(
       log.debug(s"queryAllInGroup $groupId")
       val maybeGroup: Option[Group] = groupManager.group(groupId)
       val maybeApps: Option[IndexedSeq[AppDefinition]] =
-        maybeGroup.map(_.transitiveApps.filterAs(selector.matches)(collection.breakOut))
+        maybeGroup.map(_.transitiveApps.filter(selector.matches).toIndexedSeq)
       maybeApps match {
         case Some(selectedApps) => await(resolveAppInfos(selectedApps, embed))
         case None => Seq.empty
@@ -101,7 +101,7 @@ private[appinfo] class DefaultInfoService(
       val infoById: Map[PathId, AppInfo] =
         if (groupEmbedApps) {
           val filteredApps: IndexedSeq[AppDefinition] =
-            group.transitiveApps.filterAs(selectors.appSelector.matches)(collection.breakOut)
+            group.transitiveApps.filter(selectors.appSelector.matches).toIndexedSeq
           await(resolveAppInfos(filteredApps, appEmbed, cachedBaseData.value)).map {
             info => info.app.id -> info
           }(collection.breakOut)
@@ -112,7 +112,7 @@ private[appinfo] class DefaultInfoService(
       val statusById: Map[PathId, PodStatus] =
         if (groupEmbedPods) {
           val filteredPods: IndexedSeq[PodDefinition] =
-            group.transitivePodsById.values.filterAs(selectors.podSelector.matches)(collection.breakOut)
+            group.transitivePods.filter(selectors.podSelector.matches).toIndexedSeq
           await(resolvePodInfos(filteredPods, cachedBaseData.value)).map { status =>
             PathId(status.id) -> status
           }(collection.breakOut)
