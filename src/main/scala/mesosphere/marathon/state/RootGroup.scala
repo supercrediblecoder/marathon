@@ -36,7 +36,7 @@ class RootGroup(
     },
     "`RootGroup` cannot be a child of `RootGroup`.")
 
-  private lazy val applicationDependencies: List[(AppDefinition, AppDefinition)] = {
+  lazy val applicationDependencies: List[(AppDefinition, AppDefinition)] = {
     var result = List.empty[(AppDefinition, AppDefinition)]
 
     //group->group dependencies
