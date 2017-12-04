@@ -29,8 +29,8 @@ class Group(
 
   def runSpec(id: PathId): Option[RunSpec] = {
     group(id.parent).flatMap { parentGroup =>
-      val maybeApp = parentGroup.apps.get(id)
-      if (maybeApp.isDefined) maybeApp else parentGroup.pods.get(id)
+      val maybeApp = parentGroup.app(id)
+      if (maybeApp.isDefined) maybeApp else parentGroup.pod(id)
     }
   }
 

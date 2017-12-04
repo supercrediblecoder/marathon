@@ -152,7 +152,7 @@ class RootGroupTest extends UnitTest with GroupCreation {
 
       Then("the group with same path has been replaced by the new app definition")
       changed.transitiveGroupsById.keys.map(_.toString) should be(Set("/", "/some"))
-      changed.transitiveAppsById.keys.map(_.toString) should be(Set("/some/nested"))
+      changed.transitiveAppIds.map(_.toString).to[Set] should be(Set("/some/nested"))
 
       Then("the resulting group should be valid when represented in the V2 API model")
       validate(changed)(RootGroup.rootGroupValidator(Set())) should be(Success)
@@ -181,7 +181,7 @@ class RootGroupTest extends UnitTest with GroupCreation {
       Then("the group with same path has NOT been replaced by the new app definition")
       current.transitiveGroupsById.keys.map(_.toString) should be(
         Set("/", "/some", "/some/nested", "/some/nested/path", "/some/nested/path2"))
-      changed.transitiveAppIds.map(_.toString) should be(Set("/some/nested", "/some/nested/path2/app"))
+      changed.transitiveAppIds.map(_.toString).to[Set] should be(Set("/some/nested", "/some/nested/path2/app"))
 
       Then("the conflict will be detected by our V2 API model validation")
       val result = validate(changed)(RootGroup.rootGroupValidator(Set()))
@@ -213,8 +213,8 @@ class RootGroupTest extends UnitTest with GroupCreation {
       Then("the group with same path has NOT been replaced by the new app definition")
       current.transitiveGroupsById.keys.map(_.toString) should be(
         Set("/", "/some", "/some/nested", "/some/nested/path", "/some/nested/path2"))
-      changed.transitiveAppIds.map(_.toString) should be(Set("/some/nested"))
-      changed.transitivePodsById.keySet.map(_.toString) should be(Set("/some/nested/path2/pod"))
+      changed.transitiveAppIds.map(_.toString).to[Set] should be(Set("/some/nested"))
+      changed.transitivePodIds.map(_.toString).to[Set] should be(Set("/some/nested/path2/pod"))
 
       Then("the conflict will be detected by our V2 API model validation")
       val result = validate(changed)(RootGroup.rootGroupValidator(Set()))
@@ -248,8 +248,8 @@ class RootGroupTest extends UnitTest with GroupCreation {
       Then("the group with same path has NOT been replaced by the new pod definition")
       current.transitiveGroupsById.keys.map(_.toString) should be(
         Set("/", "/some", "/some/nested", "/some/nested/path", "/some/nested/path2"))
-      changed.transitiveAppIds.map(_.toString) should be(Set.empty[String])
-      changed.transitivePodsById.keySet.map(_.toString) should be(Set("/some/nested", "/some/nested/path2/pod"))
+      changed.transitiveAppIds should have size (0)
+      changed.transitivePodIds.map(_.toString).to[Set] should be(Set("/some/nested", "/some/nested/path2/pod"))
 
       Then("the conflict will be detected by our V2 API model validation")
       val result = validate(changed)(RootGroup.rootGroupValidator(Set()))
@@ -528,7 +528,7 @@ class RootGroupTest extends UnitTest with GroupCreation {
 
       val newVersion = Timestamp.now()
       val updated = RootGroup.empty.putGroup(groupUpdate, newVersion)
-      updated.transitiveAppsById.keySet should contain(appPath)
+      updated.transitiveAppIds.toIterable should contain(appPath)
     }
 
     "should receive a non-root Group with nested groups as an updated and properly propagate transitiveAppsByI2 2" in {
@@ -546,7 +546,7 @@ class RootGroupTest extends UnitTest with GroupCreation {
 
       val newVersion = Timestamp.now()
       val updated = RootGroup.empty.putGroup(groupUpdate, newVersion)
-      updated.transitiveAppsById.keySet should contain(appPath)
+      updated.transitiveAppIds.toIterable should contain(appPath)
     }
 
     "should receive a non-root Group without nested groups as an updated and properly propagate transitiveAppsById 3" in {
@@ -559,7 +559,7 @@ class RootGroupTest extends UnitTest with GroupCreation {
 
       val newVersion = Timestamp.now()
       val updated = RootGroup.empty.putGroup(groupUpdate, newVersion)
-      updated.transitiveAppsById.keySet should contain(appPath)
+      updated.transitiveAppIds.toIterable should contain(appPath)
     }
   }
 }
