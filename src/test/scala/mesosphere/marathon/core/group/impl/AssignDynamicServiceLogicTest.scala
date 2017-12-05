@@ -200,7 +200,7 @@ class AssignDynamicServiceLogicTest extends AkkaUnitTest with GroupCreation {
         val rootGroup = createRootGroup(Map(app1.id -> app1))
         val update = AssignDynamicServiceLogic.assignDynamicServicePorts(servicePortsRange, createRootGroup(), rootGroup)
         update.transitiveApps.filter(_.hasDynamicServicePorts) should be (empty)
-        update.transitiveApps.flatMap(_.servicePorts) should equal (Set(80, 81))
+        update.transitiveApps.flatMap(_.servicePorts).to[Set] should be(Set(80, 81))
       }
 
       "Retain the original container definition if port mappings are missing" in {

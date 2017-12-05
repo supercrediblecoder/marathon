@@ -60,9 +60,9 @@ class RootGroupTest extends UnitTest with GroupCreation {
             "/test".toPath,
             apps = Map(app1.id -> app1),
             groups = Set(
-            createGroup("/test/group1".toPath, Map(app2.id -> app2)),
-            createGroup("/test/group2".toPath, Map(app3.id -> app3))
-          ))))
+              createGroup("/test/group1".toPath, Map(app2.id -> app2)),
+              createGroup("/test/group2".toPath, Map(app3.id -> app3))
+            ))))
 
       When("the transitive apps are collect")
       val appDefs = current.transitiveApps.toIterable.map(_.id.toString)
@@ -70,8 +70,8 @@ class RootGroupTest extends UnitTest with GroupCreation {
 
       Then("we have apps from all levers")
       val expected = Iterable("/test/app1", "/test/group1/app2", "/test/group2/app3")
-      appDefs should contain theSameElementsAs(expected)
-      appIds should contain theSameElementsAs(expected)
+      appDefs should contain theSameElementsAs (expected)
+      appIds should contain theSameElementsAs (expected)
     }
 
     "can find a group by its path" in {
