@@ -44,17 +44,17 @@ class Group(
     * @param remainingParents The parents that we did not walk yet.
     * @return None if no group was found or the group with id gid.
     */
-  @tailrec final def group(currentGroup: Group, gid: PathId, remainingParents: List[PathId]): Option[Group] = {
-    if (currentGroup.id == gid) Some(currentGroup)
-    else {
-      // Let's say we look for /test/foo/bar and the consumed path is /test then the next child is /test/foo
-      //val nextChild = consumedPath.append(gid.restOf(consumedPath).rootPath)
-      currentGroup.groupsById.get(remainingParents.head) match {
-        case None => None
-        case Some(childGroup) => group(childGroup, gid, remainingParents.tail)
-      }
-    }
-  }
+  //  @tailrec final def group(currentGroup: Group, gid: PathId, remainingParents: List[PathId]): Option[Group] = {
+  //    if (currentGroup.id == gid) Some(currentGroup)
+  //    else {
+  //      // Let's say we look for /test/foo/bar and the consumed path is /test then the next child is /test/foo
+  //      //val nextChild = consumedPath.append(gid.restOf(consumedPath).rootPath)
+  //      currentGroup.groupsById.get(remainingParents.head) match {
+  //        case None => None
+  //        case Some(childGroup) => group(childGroup, gid, remainingParents.tail)
+  //      }
+  //    }
+  //  }
 
   /**
     * Find and return the child group for the given path. If no match is found, then returns None
@@ -62,11 +62,9 @@ class Group(
     * @param gid The child group to find.
     * @return None if no group was found or the group.
     */
-  def group(gid: PathId): Option[Group] = {
-    transitiveGroupsById.get(gid)
-    //if (id == gid) return Some(this)
-    //else group(this, gid, gid.allParents.reverse.tail.:+(gid))
-  }
+  def group(gid: PathId): Option[Group] = transitiveGroupsById.get(gid)
+  //if (id == gid) return Some(this)
+  //else group(this, gid, gid.allParents.reverse.tail.:+(gid))
 
   def transitiveApps: Iterator[AppDefinition] = apps.valuesIterator ++ groupsById.valuesIterator.flatMap(_.transitiveApps)
   def transitiveAppIds: Iterator[PathId] = apps.keysIterator ++ groupsById.valuesIterator.flatMap(_.transitiveAppIds)
@@ -96,9 +94,6 @@ class Group(
   //  lazy val transitiveRunSpecIds: Iterable[PathId] = new Iterable[PathId] {
   //    override def iterator: Iterator[GroupKey] = transitiveRunSpecIdsIterator
   //  }
-
-  def transitiveGroupIds: Iterator[Group.GroupKey] = Iterator.single(this.id) ++ groupsById.valuesIterator.flatMap(_.transitiveGroupIds)
-  def transitiveGroups: Iterator[Group] = Iterator.single(this) ++ groupsById.valuesIterator.flatMap(_.transitiveGroups)
 
   lazy val transitiveGroupsById: Map[Group.GroupKey, Group] = {
     Map(id -> this) ++ groupsById.values.flatMap(_.transitiveGroupsById)
