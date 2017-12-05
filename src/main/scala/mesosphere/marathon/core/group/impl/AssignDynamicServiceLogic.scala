@@ -93,7 +93,7 @@ object AssignDynamicServiceLogic extends StrictLogging {
         logger.debug(s"Take next configured free port: $port")
         port
       }
-    val dynamicApps: Iterable[AppDefinition] =
+    val dynamicApps: Iterator[AppDefinition] =
       to.transitiveApps
         .filter { newApp => changedOrNew(from, newApp) }
         .map {
