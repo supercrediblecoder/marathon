@@ -119,16 +119,16 @@ class DeploymentPlanTest extends UnitTest with GroupCreation {
 
     "can compute affected app ids" in {
       val versionInfo = VersionInfo.forNewConfig(Timestamp(10))
-      val app: AppDefinition = AppDefinition("/app".toPath, Some("sleep 10"), versionInfo = versionInfo)
-      val app2: AppDefinition = AppDefinition("/app2".toPath, Some("cmd2"), versionInfo = versionInfo)
-      val app3: AppDefinition = AppDefinition("/app3".toPath, Some("cmd3"), versionInfo = versionInfo)
-      val unchanged: AppDefinition = AppDefinition("/unchanged".toPath, Some("unchanged"), versionInfo = versionInfo)
+      val app: AppDefinition = AppDefinition("/group/app".toPath, Some("sleep 10"), versionInfo = versionInfo)
+      val app2: AppDefinition = AppDefinition("/group/app2".toPath, Some("cmd2"), versionInfo = versionInfo)
+      val app3: AppDefinition = AppDefinition("/group/app3".toPath, Some("cmd3"), versionInfo = versionInfo)
+      val unchanged: AppDefinition = AppDefinition("/group/unchanged".toPath, Some("unchanged"), versionInfo = versionInfo)
 
       val apps = Map(app.id -> app, app2.id -> app2, app3.id -> app3, unchanged.id -> unchanged)
 
       val updatedApp = app.copy(cmd = Some("sleep 30"))
       val updatedApp2 = app2.copy(instances = 10)
-      val updatedApp4 = AppDefinition("/app4".toPath, Some("cmd4"))
+      val updatedApp4 = AppDefinition("/group/app4".toPath, Some("cmd4"))
       val update = Map(
         updatedApp.id -> updatedApp,
         updatedApp2.id -> updatedApp2,
@@ -140,7 +140,7 @@ class DeploymentPlanTest extends UnitTest with GroupCreation {
       val to = createRootGroup(groups = Set(createGroup("/group".toPath, update)))
       val plan = DeploymentPlan(from, to)
 
-      plan.affectedRunSpecIds should equal(Set("/app".toPath, "/app2".toPath, "/app3".toPath, "/app4".toPath))
+      plan.affectedRunSpecIds should equal(Set("/group/app".toPath, "/group/app2".toPath, "/group/app3".toPath, "/group/app4".toPath))
       plan.isAffectedBy(plan) should equal(right = true)
       plan.isAffectedBy(DeploymentPlan(from, from)) should equal(right = false)
     }

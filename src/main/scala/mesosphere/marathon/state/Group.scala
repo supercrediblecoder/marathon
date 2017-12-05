@@ -28,10 +28,8 @@ class Group(
   }
 
   def runSpec(id: PathId): Option[RunSpec] = {
-    group(id.parent).flatMap { parentGroup =>
-      val maybeApp = parentGroup.app(id)
-      if (maybeApp.isDefined) maybeApp else parentGroup.pod(id)
-    }
+    val maybeApp = this.app(id)
+    if (maybeApp.isDefined) maybeApp else this.pod(id)
   }
 
   def exists(id: PathId) = runSpec(id).isDefined
