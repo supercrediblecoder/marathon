@@ -76,8 +76,8 @@ class RootGroupTest extends UnitTest with GroupCreation {
 
     "can find a group by its path" in {
       Given("an existing group with two subgroups")
-      val app1 = AppDefinition("/test/group1/app1".toPath)
-      val app2 = AppDefinition("/test/group2/app2".toPath)
+      val app1 = AppDefinition("/test/group1/app1".toPath, cmd = Some("sleep"))
+      val app2 = AppDefinition("/test/group2/app2".toPath, cmd = Some("sleep"))
       val current = createRootGroup(
         groups = Set(
           createGroup("/test".toPath, groups = Set(

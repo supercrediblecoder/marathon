@@ -12,6 +12,8 @@ import mesosphere.marathon.plugin.{ Group => IGroup }
 import mesosphere.marathon.state.Group._
 import mesosphere.marathon.state.PathId._
 
+import scala.annotation.tailrec
+
 class Group(
     val id: PathId,
     val apps: Map[AppDefinition.AppKey, AppDefinition] = defaultApps,
@@ -35,15 +37,35 @@ class Group(
   def exists(id: PathId) = runSpec(id).isDefined
 
   /**
+    * Searches for group with id gid in currentGroup.
+    *
+    * @param currentGroup The group that is searched.
+    * @param gid The id of the group that we wish to find.
+    * @param remainingParents The parents that we did not walk yet.
+    * @return None if no group was found or the group with id gid.
+    */
+  @tailrec final def group(currentGroup: Group, gid: PathId, remainingParents: List[PathId]): Option[Group] = {
+    if (currentGroup.id == gid) Some(currentGroup)
+    else {
+      // Let's say we look for /test/foo/bar and the consumed path is /test then the next child is /test/foo
+      //val nextChild = consumedPath.append(gid.restOf(consumedPath).rootPath)
+      currentGroup.groupsById.get(remainingParents.head) match {
+        case None => None
+        case Some(childGroup) => group(childGroup, gid, remainingParents.tail)
+      }
+    }
+  }
+
+  /**
     * Find and return the child group for the given path. If no match is found, then returns None
+    *
+    * @param gid The child group to find.
+    * @return None if no group was found or the group.
     */
   def group(gid: PathId): Option[Group] = {
-    if (id == gid) Some(this)
-    else {
-      val immediateChild = gid.restOf(id).root
-      groupsById.find { case (_, group) => group.id.restOf(id).root == immediateChild }
-        .flatMap { case (_, group) => group.group(gid) }
-    }
+    transitiveGroupsById.get(gid)
+    //if (id == gid) return Some(this)
+    //else group(this, gid, gid.allParents.reverse.tail.:+(gid))
   }
 
   def transitiveApps: Iterator[AppDefinition] = apps.valuesIterator ++ groupsById.valuesIterator.flatMap(_.transitiveApps)
@@ -74,6 +96,9 @@ class Group(
   //  lazy val transitiveRunSpecIds: Iterable[PathId] = new Iterable[PathId] {
   //    override def iterator: Iterator[GroupKey] = transitiveRunSpecIdsIterator
   //  }
+
+  def transitiveGroupIds: Iterator[Group.GroupKey] = Iterator.single(this.id) ++ groupsById.valuesIterator.flatMap(_.transitiveGroupIds)
+  def transitiveGroups: Iterator[Group] = Iterator.single(this) ++ groupsById.valuesIterator.flatMap(_.transitiveGroups)
 
   lazy val transitiveGroupsById: Map[Group.GroupKey, Group] = {
     Map(id -> this) ++ groupsById.values.flatMap(_.transitiveGroupsById)

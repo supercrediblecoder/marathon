@@ -115,7 +115,7 @@ class AssignDynamicServiceLogicTest extends AkkaUnitTest with GroupCreation {
         val app = AppDefinition("/app1".toPath, portDefinitions = Seq(), container = Some(container), networks = virtualNetwork)
         val rootGroup = createRootGroup(Map(app.id -> app))
         val updatedGroup = AssignDynamicServiceLogic.assignDynamicServicePorts(servicePortsRange, createRootGroup(), rootGroup)
-        val updatedApp = updatedGroup.transitiveApps.head
+        val updatedApp = updatedGroup.transitiveApps.next()
         updatedApp.hasDynamicServicePorts should be (false)
         updatedApp.hostPorts should have size 4
         updatedApp.servicePorts should have size 4
