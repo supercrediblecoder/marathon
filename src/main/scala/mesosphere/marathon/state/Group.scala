@@ -48,14 +48,14 @@ class Group(
     }
   }
 
-  def transitiveApps: Iterator[AppDefinition] = apps.valuesIterator ++ groupsById.valuesIterator.flatMap(_.transitiveApps)
-  def transitiveAppIds: Iterator[PathId] = apps.keysIterator ++ groupsById.valuesIterator.flatMap(_.transitiveAppIds)
+  val transitiveApps: Iterable[AppDefinition] = apps.values ++ groupsById.values.flatMap(_.transitiveApps)
+  val transitiveAppIds: Iterable[PathId] = apps.keys ++ groupsById.values.flatMap(_.transitiveAppIds)
 
-  def transitivePods: Iterator[PodDefinition] = pods.valuesIterator ++ groupsById.valuesIterator.flatMap(_.transitivePods)
-  def transitivePodIds: Iterator[PathId] = pods.keysIterator ++ groupsById.valuesIterator.flatMap(_.transitivePodIds)
+  val transitivePods: Iterable[PodDefinition] = pods.values ++ groupsById.values.flatMap(_.transitivePods)
+  val transitivePodIds: Iterable[PathId] = pods.keys ++ groupsById.values.flatMap(_.transitivePodIds)
 
-  def transitiveRunSpecs: Iterator[RunSpec] = transitiveApps ++ transitivePods
-  def transitiveRunSpecIds: Iterator[PathId] = transitiveAppIds ++ transitivePodIds
+  val transitiveRunSpecs: Iterable[RunSpec] = transitiveApps ++ transitivePods
+  val transitiveRunSpecIds: Iterable[PathId] = transitiveAppIds ++ transitivePodIds
 
   lazy val transitiveGroupsById: Map[Group.GroupKey, Group] = {
     Map(id -> this) ++ groupsById.values.flatMap(_.transitiveGroupsById)
