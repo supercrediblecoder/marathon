@@ -289,7 +289,7 @@ class MarathonSchedulerActorTest extends AkkaUnitTest with ImplicitSender with G
     "Deployment resets rate limiter for affected apps" in withFixture() { f =>
       import f._
       val app = AppDefinition(
-        id = PathId("/app1"),
+        id = PathId("/foo/bar/app1"),
         cmd = Some("cmd"),
         instances = 2,
         upgradeStrategy = UpgradeStrategy(0.5),
