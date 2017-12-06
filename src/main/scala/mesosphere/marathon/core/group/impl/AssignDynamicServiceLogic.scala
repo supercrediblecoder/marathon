@@ -7,14 +7,7 @@ import mesosphere.marathon.state._
 import scala.collection.immutable.Seq
 
 object AssignDynamicServiceLogic extends StrictLogging {
-<<<<<<< HEAD
-<<<<<<< HEAD
 
-=======
->>>>>>> Extract DynamicServiceLogic into object
-=======
-
->>>>>>> Correct some syntax.
   /**
     * Checks whether newApp is new or changed.
     * @param original The original root group form before the update.
