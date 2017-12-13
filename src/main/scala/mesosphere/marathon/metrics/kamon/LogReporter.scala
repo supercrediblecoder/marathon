@@ -4,6 +4,7 @@ package metrics.kamon
 import akka.actor.{ Actor, ExtendedActorSystem, Extension, ExtensionId, ExtensionIdProvider, Props }
 import com.typesafe.scalalogging.StrictLogging
 import kamon.Kamon
+import kamon.metric.EntitySnapshot
 import kamon.metric.SubscriptionsDispatcher.TickMetricSnapshot
 import kamon.metric.instrument.{ Counter, Histogram }
 
@@ -49,11 +50,17 @@ class LogReporterSubscriber extends Actor with StrictLogging {
         snapshot.gauge("gauge").foreach(logHistogramSimple(entity.name, _))
       case (entity, snapshot) if entity.category == "histogram" =>
         snapshot.histogram("histogram").foreach(logHistogram(entity.name, _))
-      case (entity, _) => logger.debug(s"Ignoring unknown metric ${entity.name}")
+      case (entity, snapshot) if entity.category == "trace" =>
+        logTrace(entity.name, snapshot)
+      case (entity, snapshot) if entity.category == "trace-segment" =>
+        logger.debug(s"Trace segment ${entity.name}")
+      case (entity, _) => logger.debug(s"Ignoring unknown metric ${entity.name} for unknown category ${entity.category}")
     }
   }
 
-  def logCounter(name: String, snapshot: Counter.Snapshot): Unit = logger.debug(s"tick=$ticks $name=${snapshot.count}")
+  def logCounter(name: String, snapshot: Counter.Snapshot): Unit = {
+    logger.debug(s"tick=$ticks $name=${snapshot.count}")
+  }
 
   def logHistogramSimple(name: String, snapshot: Histogram.Snapshot): Unit = {
     logger.debug(s"tick=$ticks $name.min=${snapshot.min} $name.max=${snapshot.max}")
@@ -61,5 +68,9 @@ class LogReporterSubscriber extends Actor with StrictLogging {
 
   def logHistogram(name: String, snapshot: Histogram.Snapshot): Unit = {
     logger.debug(s"tick=$ticks $name.min=${snapshot.min} $name.median=${snapshot.percentile(50.0D)} $name.max=${snapshot.max}")
+  }
+
+  def logTrace(name: String, snapshot: EntitySnapshot): Unit = {
+    snapshot.histogram("elapsed-time").foreach(logHistogram(s"$name.elapsed-nanos", _))
   }
 }

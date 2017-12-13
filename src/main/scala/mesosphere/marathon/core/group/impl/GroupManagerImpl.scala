@@ -109,36 +109,46 @@ class GroupManagerImpl(
     version: Timestamp, force: Boolean, toKill: Map[PathId, Seq[Instance]]): Future[Either[T, DeploymentPlan]] = try {
 
     // All updates to the root go through the work queue.
-    val maybeDeploymentPlan: Future[Either[T, DeploymentPlan]] = serializeUpdates {
-      logger.info(s"Upgrade root group version:$version with force:$force")
+    val maybeDeploymentPlan: Future[Either[T, DeploymentPlan]] =
+      serializeUpdates {
+        logger.info(s"Upgrade root group version:$version with force:$force")
 
-      val from = rootGroup()
-      async {
-        val changedGroup = await(change(from))
-        changedGroup match {
-          case Left(left) =>
-            Left(left)
-          case Right(changed) =>
-            val unversioned = AssignDynamicServiceLogic.assignDynamicServicePorts(
-              Range.inclusive(config.localPortMin(), config.localPortMax()),
-              from,
-              changed)
-            val withVersionedApps = GroupVersioningUtil.updateVersionInfoForChangedApps(version, from, unversioned)
-            val withVersionedAppsPods = GroupVersioningUtil.updateVersionInfoForChangedPods(version, from, withVersionedApps)
-            Validation.validateOrThrow(withVersionedAppsPods)(RootGroup.rootGroupValidator(config.availableFeatures))
-            val plan = DeploymentPlan(from, withVersionedAppsPods, version, toKill)
-            Validation.validateOrThrow(plan)(DeploymentPlan.deploymentPlanValidator())
-            logger.info(s"Computed new deployment plan for ${plan.targetIdsString}:\n$plan")
-            await(groupRepository.storeRootVersion(plan.target, plan.createdOrUpdatedApps, plan.createdOrUpdatedPods))
-            await(deploymentService.get().deploy(plan, force))
-            await(groupRepository.storeRoot(plan.target, plan.createdOrUpdatedApps, plan.deletedApps, plan.createdOrUpdatedPods, plan.deletedPods))
-            logger.info(s"Updated groups/apps/pods according to plan ${plan.id} for ${plan.targetIdsString}")
-            // finally update the root under the write lock.
-            root := Option(plan.target)
-            Right(plan)
+        val from = rootGroup()
+        async {
+          val changedGroup = await(change(from))
+          changedGroup match {
+            case Left(left) =>
+              Left(left)
+            case Right(changed) =>
+              val ctx = kamon.Kamon.tracer.newContext("deployment-plan")
+              val seg1 = ctx.startSegment("api", "assign-dynamic-service", "foo")
+              val unversioned = AssignDynamicServiceLogic.assignDynamicServicePorts(
+                Range.inclusive(config.localPortMin(), config.localPortMax()),
+                from,
+                changed)
+              seg1.finish()
+
+              val withVersionedApps = ctx.withNewSegment("api", "update-version-info", "foo") {
+                GroupVersioningUtil.updateVersionInfoForChangedApps(version, from, unversioned)
+              }
+              val withVersionedAppsPods = GroupVersioningUtil.updateVersionInfoForChangedPods(version, from, withVersionedApps)
+              Validation.validateOrThrow(withVersionedAppsPods)(RootGroup.rootGroupValidator(config.availableFeatures))
+              val plan = DeploymentPlan(from, withVersionedAppsPods, version, toKill)
+              Validation.validateOrThrow(plan)(DeploymentPlan.deploymentPlanValidator())
+              logger.info(s"Computed new deployment plan for ${plan.targetIdsString}:\n$plan")
+              await(groupRepository.storeRootVersion(plan.target, plan.createdOrUpdatedApps, plan.createdOrUpdatedPods))
+              await(deploymentService.get().deploy(plan, force))
+              await(groupRepository.storeRoot(plan.target, plan.createdOrUpdatedApps, plan.deletedApps, plan.createdOrUpdatedPods, plan.deletedPods))
+              logger.info(s"Updated groups/apps/pods according to plan ${plan.id} for ${plan.targetIdsString}")
+              // finally update the root under the write lock.
+              root := Option(plan.target)
+
+              ctx.finish()
+
+              Right(plan)
+          }
         }
       }
-    }
 
     maybeDeploymentPlan.onComplete {
       case Success(Right(plan)) =>
