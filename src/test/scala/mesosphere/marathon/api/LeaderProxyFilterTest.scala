@@ -6,14 +6,14 @@ import java.net.{ HttpURLConnection, URL }
 import javax.servlet.FilterChain
 import javax.servlet.http.{ HttpServletRequest, HttpServletResponse }
 
-import mesosphere.UnitTest
+import mesosphere.AkkaUnitTest
 import mesosphere.chaos.http.HttpConf
 import mesosphere.marathon.core.election.ElectionService
 import akka.http.scaladsl.model.StatusCodes._
 import org.mockito.Mockito._
 import org.rogach.scallop.ScallopConf
 
-class LeaderProxyFilterTest extends UnitTest {
+class LeaderProxyFilterTest extends AkkaUnitTest {
 
   def httpConf(args: String*): HttpConf = {
     new ScallopConf(args) with HttpConf {

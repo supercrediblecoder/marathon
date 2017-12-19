@@ -1,13 +1,12 @@
 package mesosphere.marathon
 package io
 
-import java.io.{ Closeable, File, FileNotFoundException, InputStream, OutputStream }
+import java.io.{ Closeable, File, FileNotFoundException, InputStream }
 
 import com.typesafe.scalalogging.StrictLogging
 import org.apache.commons.io.IOUtils
 
 import scala.util.{ Failure, Success, Try }
-import scala.util.control.Breaks.break
 
 object IO extends StrictLogging {
 
@@ -34,37 +33,6 @@ object IO extends StrictLogging {
       fn(closeable)
     } finally {
       IOUtils.closeQuietly(closeable)
-    }
-  }
-
-  /**
-    * Copies all bytes from an input stream to an outputstream.
-    *
-    * The method is adapted from [[com.google.common.io.ByteStreams.copy]] with the only difference that we flush after
-    * each write. Note: This method is blocking!
-    *
-    * @param maybeFrom Inputstream for copy from.
-    * @param mabyeTo Outputstream to copy to.
-    * @return
-    */
-  def transfer(maybeFrom: Option[InputStream], mabyeTo: Option[OutputStream]): Long = {
-    (maybeFrom, mabyeTo) match {
-      case (Some(from), Some(to)) =>
-        val buf = createBuffer();
-        var total = 0
-        while (true) {
-          val r = from.read(buf)
-          if (r == -1) {
-            break
-          }
-          to.write(buf, 0, r)
-          to.flush()
-          total += r
-        }
-        total
-      case _ =>
-        logger.debug("Did not copy any data.")
-        0
     }
   }
 }
