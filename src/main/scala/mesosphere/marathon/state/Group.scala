@@ -67,7 +67,17 @@ class Group(
 
   override def hashCode(): Int = Objects.hash(id, apps, pods, groupsById, dependencies, version)
 
-  override def toString = s"Group($id, ${apps.values}, ${pods.values}, ${groupsById.values}, $dependencies, $version, ${transitiveAppsById}, ${transitivePodsById})"
+  private def summarize[T](iterator: Iterator[T]): String = {
+    val s = new StringBuilder
+    s ++= "Seq("
+    s ++= iterator.take(3).toSeq.mkString(", ")
+    if (iterator.hasNext)
+      s ++= s", ... ${iterator.length} more"
+    s ++= ")"
+    s.toString
+  }
+
+  override def toString = s"Group($id, ${summarize(apps.values.iterator.map(_.id))}, ${summarize(pods.values.iterator.map(_.id))}, ${summarize(groupsById.values.iterator.map(_.id))}, ${summarize(dependencies.iterator)}, $version, ${transitiveAppsById.size}, ${transitivePodsById.size})"
 }
 
 object Group {
