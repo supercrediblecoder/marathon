@@ -10,8 +10,10 @@ import mesosphere.marathon.api.v2.Validation._
 import mesosphere.marathon.api.v2.validation.AppValidation
 import mesosphere.marathon.core.pod.PodDefinition
 import mesosphere.marathon.plugin.{ Group => IGroup }
-import mesosphere.marathon.state.Group.{ defaultApps, defaultPods, defaultGroups, defaultDependencies, defaultVersion }
-import mesosphere.marathon.state.PathId.{ validPathWithBase, StringPathId }
+import mesosphere.marathon.state.Group.{ defaultApps, defaultDependencies, defaultGroups, defaultPods, defaultVersion }
+import mesosphere.marathon.state.PathId.{ StringPathId, validPathWithBase }
+
+import scala.annotation.tailrec
 
 class Group(
     val id: PathId,
@@ -66,7 +68,19 @@ class Group(
     * @param gid The path of the group for find.
     * @return None if no group was found or non empty option with group.
     */
-  def group(gid: PathId): Option[Group] = transitiveGroupsById.get(gid)
+  def group(gid: PathId): Option[Group] = group(this, gid, gid.allParents.reverse.tail :+ gid)
+
+  @tailrec
+  private def group(next: Group, gid: PathId, parents: List[PathId]): Option[Group] = {
+    println(s"###gid:$gid, next:${next.id}, parents:$parents")
+    if (next.id == gid) Some(next)
+    else if (parents.nonEmpty) {
+      next.groupsById.get(parents.head) match {
+        case None => None
+        case Some(child) => group(child, gid, parents.tail)
+      }
+    } else None
+  }
 
   private def transitiveAppsIterator(): Iterator[AppDefinition] = apps.valuesIterator ++ groupsById.valuesIterator.flatMap(_.transitiveAppsIterator())
   private def transitiveAppIdsIterator(): Iterator[PathId] = apps.keysIterator ++ groupsById.valuesIterator.flatMap(_.transitiveAppIdsIterator())

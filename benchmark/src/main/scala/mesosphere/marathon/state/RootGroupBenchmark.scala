@@ -4,6 +4,7 @@ package state
 import java.util.concurrent.TimeUnit
 
 import mesosphere.marathon.core.pod.BridgeNetwork
+import mesosphere.marathon.upgrade.GroupVersioningUtil
 import org.openjdk.jmh.annotations._
 import org.openjdk.jmh.infra.Blackhole
 
@@ -14,14 +15,14 @@ class GroupBenchmark {
 
   val version = VersionInfo.forNewConfig(Timestamp(1))
 
-  def makeApp(path: PathId) =
+  def makeApp(path: PathId, containerImage: String = "alpine") =
     AppDefinition(
       id = path,
       labels = Map("ID" -> path.toString),
       versionInfo = version,
       networks = Seq(BridgeNetwork()),
       container = Some(
-        Container.Docker(Nil, "alpine", List(Container.PortMapping(2015, Some(0), 10000, "tcp", Some("thing")))))
+        Container.Docker(Nil, containerImage, List(Container.PortMapping(2015, Some(0), 10000, "tcp", Some("thing")))))
     )
 
   @Param(value = Array("2", "10", "100", "1000"))
@@ -40,12 +41,12 @@ class GroupBenchmark {
   lazy val rootGroup: RootGroup = fillRootGroup()
 
   // Create apps and add them to each group on each level
-  def fillRootGroup(): RootGroup = {
+  def fillRootGroup(containerImage: String = "alpine"): RootGroup = {
     var tmpGroup = RootGroup()
     groupPaths.foreach { groupPath =>
       appIds.foreach { appId =>
         val path = groupPath / s"app-${appId}"
-        val app = makeApp(path)
+        val app = makeApp(path, containerImage)
         // Groups will be created
         tmpGroup = tmpGroup.updateApp(path, (maybeApp) => app) // because we create an app, you know.
       }
@@ -76,5 +77,15 @@ class RootGroupBenchmark extends GroupBenchmark {
   def buildRootGroup(hole: Blackhole): Unit = {
     val root = fillRootGroup()
     hole.consume(root)
+  }
+
+  @Benchmark
+  def updateVersion(hole: Blackhole): Unit = {
+    val oldRoot = fillRootGroup()
+    val newRoot = fillRootGroup(containerImage = "debian")
+    val updatedRoot = GroupVersioningUtil.updateVersionInfoForChangedApps(Timestamp(2), oldRoot, newRoot)
+    hole.consume(oldRoot)
+    hole.consume(newRoot)
+    hole.consume(updatedRoot)
   }
 }

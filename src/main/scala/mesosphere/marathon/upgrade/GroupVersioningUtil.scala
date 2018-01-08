@@ -26,32 +26,31 @@ object GroupVersioningUtil {
     */
   def updateVersionInfoForChangedApps(version: Timestamp, from: RootGroup, to: RootGroup): RootGroup = {
 
-    def updateAppVersionInfo(maybeOldApp: Option[AppDefinition], newApp: AppDefinition): AppDefinition = {
-      val newVersionInfo = maybeOldApp match {
+    def updateAppVersionInfo(maybeOldApp: Option[AppDefinition], newApp: AppDefinition): Option[AppDefinition] = {
+      val maybeNewVersionInfo: Option[VersionInfo] = maybeOldApp match {
         case None =>
           log.info(s"${newApp.id}: new app detected")
-          VersionInfo.forNewConfig(newVersion = version)
+          Some(VersionInfo.forNewConfig(newVersion = version))
         case Some(oldApp) =>
           if (oldApp.isUpgrade(newApp)) {
             log.info(s"${newApp.id}: upgrade detected for app (oldVersion ${oldApp.versionInfo})")
-            oldApp.versionInfo.withConfigChange(newVersion = version)
+            Some(oldApp.versionInfo.withConfigChange(newVersion = version))
           } else if (oldApp.isOnlyScaleChange(newApp)) {
             log.info(s"${newApp.id}: scaling op detected for app (oldVersion ${oldApp.versionInfo})")
-            oldApp.versionInfo.withScaleOrRestartChange(newVersion = version)
+            Some(oldApp.versionInfo.withScaleOrRestartChange(newVersion = version))
           } else if (oldApp.versionInfo != newApp.versionInfo && newApp.versionInfo == VersionInfo.NoVersion) {
             log.info(s"${newApp.id}: restart detected for app (oldVersion ${oldApp.versionInfo})")
-            oldApp.versionInfo.withScaleOrRestartChange(newVersion = version)
+            Some(oldApp.versionInfo.withScaleOrRestartChange(newVersion = version))
           } else {
-            oldApp.versionInfo
+            None
           }
       }
 
-      newApp.copy(versionInfo = newVersionInfo)
+      maybeNewVersionInfo.map(versionInfo => newApp.copy(versionInfo = versionInfo))
     }
 
     val updatedTargetApps = to.transitiveApps.flatMap { newApp =>
-      val updated = updateAppVersionInfo(from.app(newApp.id), newApp)
-      if (updated.versionInfo != newApp.versionInfo) Some(updated) else None
+      updateAppVersionInfo(from.app(newApp.id), newApp)
     }
     val updatedTo = to.updateVersion(version)
     updatedTargetApps.foldLeft(updatedTo) { (resultGroup, updatedApp) =>
