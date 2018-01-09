@@ -68,12 +68,12 @@ class Group(
     * @param gid The path of the group for find.
     * @return None if no group was found or non empty option with group.
     */
-  def group(gid: PathId): Option[Group] = {
-    gid.allParents match {
-      case Nil => group(this, gid, List(gid))
-      case head :: tail => group(this, gid, tail :+ gid)
+  def group(gid: PathId): Option[Group] = //group(this, gid, gid.allParents.reverse.tail :+ gid)
+    {
+      val parents = gid.allParents
+      if (parents.nonEmpty) group(this, gid, parents.reverse.tail :+ gid)
+      else group(this, gid, List(gid))
     }
-  }
 
   @tailrec
   private def group(next: Group, gid: PathId, parents: List[PathId]): Option[Group] = {
