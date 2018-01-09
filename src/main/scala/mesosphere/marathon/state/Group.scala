@@ -68,11 +68,15 @@ class Group(
     * @param gid The path of the group for find.
     * @return None if no group was found or non empty option with group.
     */
-  def group(gid: PathId): Option[Group] = group(this, gid, gid.allParents.reverse.tail :+ gid)
+  def group(gid: PathId): Option[Group] = {
+    gid.allParents match {
+      case Nil => group(this, gid, List(gid))
+      case head :: tail => group(this, gid, tail :+ gid)
+    }
+  }
 
   @tailrec
   private def group(next: Group, gid: PathId, parents: List[PathId]): Option[Group] = {
-    println(s"###gid:$gid, next:${next.id}, parents:$parents")
     if (next.id == gid) Some(next)
     else if (parents.nonEmpty) {
       next.groupsById.get(parents.head) match {
